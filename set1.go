@@ -157,8 +157,8 @@ func DecryptECB(src []byte, block cipher.Block) []byte {
 // existence of identical blocks with a map.
 func DetectECB(src []byte, blockSize int) bool {
 	m := make(map[string]struct{})
-	for i := 0; i < len(src); i += blockSize {
-		block := string(src[i : i+blockSize])
+	for i := 0; i < len(src)/blockSize; i++ {
+		block := string(src[i*blockSize : (i+1)*blockSize])
 		if _, ok := m[block]; ok {
 			return true
 		}

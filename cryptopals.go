@@ -23,7 +23,13 @@ func decodeHex(s string) []byte {
 	return b
 }
 
+// decodeBase64 decodes a base64 encoded byte slice.
 func decodeBase64(in []byte) []byte {
 	b, _ := base64.StdEncoding.DecodeString(string(in))
 	return b
+}
+
+// mod takes the mod of x and y.
+func mod(x, y int) int {
+	return (x%y + y) % y
 }
