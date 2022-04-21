@@ -69,7 +69,7 @@ func GuessKey(src []byte) (key byte, high float64) {
 	return
 }
 
-// ComputeHammering counts the differing bits in the strings by XORing them
+// ComputeHammering counts the differing bits in the strings by xoring them
 // together and counting the remaining bits.
 func ComputeHamming(x, y []byte) (count int) {
 	for _, b := range XorSlice(x, y) {

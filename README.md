@@ -29,7 +29,7 @@ slice, and re-encode it into base64. This should yield
 Challenge link: [https://cryptopals.com/sets/1/challenges/2](https://cryptopals.com/sets/1/challenges/2)
 
 This challenge asks us to take two hex-encoded strings, decoding them into byte
-slices, and XORing them together. When re-encoded to hex, this yields
+slices, and xoring them together. When re-encoded to hex, this yields
 `746865206b696420646f6e277420706c6179`.
 
 Here is a tiny truth table for XOR :)
@@ -46,7 +46,7 @@ Here is a tiny truth table for XOR :)
 Challenge link: [https://cryptopals.com/sets/1/challenges/3](https://cryptopals.com/sets/1/challenges/3)
 
 This challenge asks us to decode a hex-encoded string to a byte slice, brute
-forcing it by XORing it with values from 0..255.
+forcing it by xoring it with values from 0..255.
 
 We could print the output to console, but that's really inconvenient and
 involves a human factor to figure out which sentence actually makes sense. To
@@ -82,7 +82,7 @@ cryptography. To make it easier we can break it into multiple sections.
 Firstly, we will need to understand the concept of
 [hamming distance](https://en.wikipedia.org/wiki/Hamming_distance) at the bit
 level. In essence, we are counting the number of differing bits between two
-strings of equal length. This can be accomplished by XORing the strings together
+strings of equal length. This can be accomplished by xoring the strings together
 and counting the number of bits that are set to one.
 
 As mentioned in the example, we can validate that our code works correctly by
