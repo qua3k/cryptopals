@@ -88,11 +88,12 @@ numbers.[^1]
 
 In my research, I happened upon
 [this site discussing this topic in detail](https://carterbancroft.com/breaking-repeating-key-xor-theory)
-as well as another set of cryptopals solutions written in Python (I seem to have
-lost the link) which prompted me to begin working on code that would iterate
-through the length of the ciphertext and compare each chunk
-(`slice[size*(i+1):size*(i+2)]`) against the first chunk. This worked as
-expected, which allowed us to determine the key size.
+as well as another set of cryptopals solutions written in
+[Python](https://github.com/vijithassar/cryptopals-literate-python/blob/master/challenge06.py.md)
+which prompted me to begin working on code that would iterate through the
+length of the ciphertext and compare each chunk (`slice[size*(i+1):size*(i+2)]`)
+against the first chunk. This worked as expected, which allowed us to determine
+the key size.
 
 Armed with the key size, we attempt to split the ciphertext into chunks of
 `len(keysize)`. We transpose the blocks (create a slice of byte slices) by
