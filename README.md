@@ -25,17 +25,18 @@ Here is a tiny truth table for XOR :)
 ## Challenge 3
 
 This challenge asks us to decode a hex-encoded string xored with a single
-character.
+character, which should look something like `hello ^ XXXXX`. Since we know that
+the value of the byte type can only be 0..255 we can brute force the ciphertext
+against each value to derive the plaintext and key.
 
-We could print the result of `string ⊕ key` where key is 0..255; we would be
-able to deduce the correct key by reading the console output, but that doesn't
-scale well and is very tedious. To solve this challenge effectively, we can
-calculate which output is likely to be the correct one via
-[frequency analysis](https://en.wikipedia.org/wiki/Frequency_analysis), assuming
-that the string that has the highest frequency count is likely to be the correct
-solution. To do this effectively we iterate through the bytes of the output and
-lookup their frequency in the English language. Once we loop through all the
-values we return the string that "scored" the highest.
+However, we want to return the correct plaintext, not 256 potential candidates,
+so we will need additional infrastructure for this challenge. For each decrypted
+candidate we can perform
+[frequency analysis](https://en.wikipedia.org/wiki/Frequency_analysis). We can
+construct a map of the frequency of each letter as it appears in English texts,
+keeping global state of which decrypted string has the highest score. This
+allows us to return only the highest scoring string rather than all potential
+candidates, which will prove essential in later challenges.
 
 ## Challenge 4
 
@@ -214,6 +215,23 @@ the capital X and changing the ciphertext byte in the block immediately prior so
 at decryption time it will look like
 `C[i-1] (which is really P[i] ^ C[i-1] ^ DESIRED_BYTE) ^ P[i]`, giving us
 `DESIRED_BYTE` in the final decrypted plaintext.
+
+## Challenge 17
+
+Back from a hiatus :) I'll try to write my own AES implementation in the near
+future. Now, onto the challenge.
+
+We are given the IV and a padding oracle that tells us whether some padding was
+valid. If we look at CBC decryption, we see the ciphertext of the previous block
+is xored with the decryption of the current block. Thus, changing a bit of the
+ciphertext allows us to influence the decryption of the current block. We know
+that for any given `m ^ m = 0`, so if we modify the last byte, we xor our guess
+`m` with `0x1`; if `m` is correct, then the padding will likely* be valid. Then
+we modify the next one for a padding of 2, and so on. But as padding gets longer
+we run into the risk of a collision, and to rectify this you could also
+temporarily modify the previous one and see if the padding remains valid. I
+haven't implemented that here, but it would be a trivial addition.
+
 
 [^1]: I looked at Filippo Valsorda's solutions @
 [mostly-harmless/](https://github.com/FiloSottile/mostly-harmless/blob/main/cryptopals/set1.go#L97)

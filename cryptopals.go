@@ -29,6 +29,11 @@ func decodeBase64(in []byte) []byte {
 	return b
 }
 
+func decodeBase64String(s string) []byte {
+	b, _ := base64.StdEncoding.DecodeString(s)
+	return b
+}
+
 // mod takes the mod of x and y.
 func mod(x, y int) int {
 	return (x%y + y) % y

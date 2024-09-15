@@ -15,13 +15,9 @@ import (
 
 // HexToBase64 takes a hex-encoded string, decoding it as a byte slice and
 // re-encoding it in base64 format.
-func HexToBase64(hs string) (string, error) {
-	s, err := hex.DecodeString(hs)
-	if err != nil {
-		return "", err
-	}
-
-	return base64.StdEncoding.EncodeToString(s), nil
+func HexToBase64(hs string) string {
+	s, _ := hex.DecodeString(hs)
+	return base64.StdEncoding.EncodeToString(s)
 }
 
 // XorSlice takes two integer slices and XORs the first slice by the second
@@ -115,7 +111,8 @@ func averageChunks(src []byte, size int) (avg float64) {
 func FindXorKeySize(src []byte) (result int) {
 	low := math.MaxFloat64 // we are looking for the lowest hamming distance
 	for size := 2; size < 40; size++ {
-		score := averageChunks(src, size) / float64(size) // calculate score by computing the edit distance and normalizing it by dividing
+		// calculate score by computing the edit distance and normalizing it by dividing
+		score := averageChunks(src, size) / float64(size)
 		if score < low {
 			result, low = size, score
 		}
@@ -156,8 +153,10 @@ func DecryptECB(src []byte, block cipher.Block) []byte {
 // DetectECB detects if a string is encrypted in ECB mode by checking for the
 // existence of identical blocks with a map.
 func DetectECB(src []byte, blockSize int) bool {
-	m := make(map[string]struct{})
-	for i := 0; i < len(src)/blockSize; i++ {
+	blocks := len(src) / blockSize
+	m := make(map[string]struct{}, blocks)
+
+	for i := 0; i < blocks; i++ {
 		block := string(src[i*blockSize : (i+1)*blockSize])
 		if _, ok := m[block]; ok {
 			return true

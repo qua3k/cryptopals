@@ -19,8 +19,8 @@ func PadPKCS7(src []byte, size uint8) []byte {
 	return append(src, bytes.Repeat([]byte{byte(padLen)}, padLen)...)
 }
 
-// EncryptCBC encrypts a block by xoring the plaintext block by the previous
-// ciphertext block and encrypting with the block cipher.
+// EncryptCBC encrypts a block by xoring the plaintext block by the previous ciphertext block and
+// encrypting with the block cipher.
 func EncryptCBC(bl cipher.Block, src []byte, iv []byte) []byte {
 	bs := bl.BlockSize()
 	if len(src)%bs != 0 {
@@ -39,8 +39,8 @@ func EncryptCBC(bl cipher.Block, src []byte, iv []byte) []byte {
 	return res
 }
 
-// DecryptCBC decrypts a block by decrypting the ciphertext block and xoring it
-// with the previous ciphetext to obtain the plaintext.
+// DecryptCBC decrypts a block by decrypting the ciphertext block and xoring it with the previous
+// ciphetext to obtain the plaintext.
 func DecryptCBC(bl cipher.Block, src []byte, iv []byte) []byte {
 	bs := bl.BlockSize()
 	if len(src)%bs != 0 {
@@ -79,9 +79,9 @@ func GenRandKey(size int) []byte {
 	return res
 }
 
-// NewCBCECBOracle takes a plaintext and encrypts it with AES, choosing ECB mode
-// or CBC mode randomly. The key (and IV for CBC mode) are cryptographically
-// secure, using the crypto/rand package.
+// NewCBCECBOracle takes a plaintext and encrypts it with AES, choosing ECB mode or CBC mode
+// randomly. The key (and IV for CBC mode) are cryptographically secure, using the crypto/rand
+// package.
 func NewCBCECBOracle() func([]byte) []byte {
 	b, _ := aes.NewCipher(GenRandKey(16))
 	return func(src []byte) (res []byte) {
@@ -104,16 +104,15 @@ func NewCBCECBOracle() func([]byte) []byte {
 // NewAppendECBOracle creates a new ECB oracle that appends the specified
 // secret, padding appropriately and encrypting the input in ECB mode.
 func NewAppendECBOracle(secret string) func([]byte) []byte {
-	b, _ := aes.NewCipher(GenRandKey(16))
+	bl, _ := aes.NewCipher(GenRandKey(16))
 	return func(src []byte) []byte {
-		res := PadPKCS7(append(src, decodeBase64([]byte(secret))...), uint8(b.BlockSize()))
-		return EncryptECB(res, b)
+		res := PadPKCS7(append(src, decodeBase64String(secret)...), uint8(bl.BlockSize()))
+		return EncryptECB(res, bl)
 	}
 }
 
-// findBlockSize attempts to brute force the block size of an ECB oracle by
-// looking for identical, adjacent blocks. Returns 0 if the text is not
-// encrypted in ECB mode.
+// findBlockSize attempts to brute force the block size of an ECB oracle by looking for identical,
+// adjacent blocks. Returns 0 if the text is not encrypted in ECB mode.
 func findBlockSize(oracle func([]byte) []byte) (bs int) {
 	var ecb bool
 	for bs = 3; bs < 64; bs++ {
@@ -130,8 +129,7 @@ func findBlockSize(oracle func([]byte) []byte) (bs int) {
 	return
 }
 
-// DecryptAppendOracle attempts to recover appended plaintext given by
-// NewAppendECBOracle.
+// DecryptAppendOracle attempts to recover appended plaintext given by NewAppendECBOracle.
 func DecryptAppendOracle(oracle func([]byte) []byte) []byte {
 	bs := findBlockSize(oracle)
 	if bs == 0 {
@@ -140,8 +138,10 @@ func DecryptAppendOracle(oracle func([]byte) []byte) []byte {
 
 	// constructFirstMap constructs a map of ciphertexts given an oracle.
 	constructFirstMap := func(src []byte) map[string]byte {
-		res := map[string]byte{}
-		for i := 0; i < 128; i++ { // for the sake of time let's stick to 128
+		const iters = 128 // for the sake of time let's stick to 128
+		res := make(map[string]byte, iters)
+
+		for i := 0; i < iters; i++ {
 			c := oracle(append(src, byte(i)))
 			res[string(c[:bs])] = uint8(i)
 		}
@@ -162,7 +162,7 @@ func DecryptAppendOracle(oracle func([]byte) []byte) []byte {
 	}
 
 	res := make([]byte, len(oracle([]byte{})))
-	for i := 0; i < len(res); i++ {
+	for i := range res {
 		r := bytes.Repeat([]byte{'A'}, mod(bs-i-1, bs))
 		current := i / bs
 
@@ -180,12 +180,11 @@ func DecryptAppendOracle(oracle func([]byte) []byte) []byte {
 
 // GenerateProfile takes an email and encodes it into "URL encoded" form.
 func GenerateProfile(email string) string {
-	v := url.Values{}
-	v.Set("email", email)
-	v.Set("uid", "10")
-	v.Set("role", "user")
-
-	return v.Encode()
+	return url.Values{
+		"email": []string{email},
+		"uid":   []string{"10"},
+		"role":  []string{"user"},
+	}.Encode()
 }
 
 // NewProfileOracle returns an oracle that takes an email, generates a profile
@@ -206,6 +205,9 @@ func UnpadPKCS7(src []byte, size uint8) []byte {
 	}
 
 	added := src[len(src)-1]
+	if int(added) > len(src) || added == 0 {
+		return nil
+	}
 
 	padding := src[len(src)-int(added):]
 	for i := range padding {
@@ -234,15 +236,18 @@ func DecryptAdmin(src []byte, bl cipher.Block) bool {
 //
 // For instance, the plaintext blocks for email foo@bar.com when blocksize is 16
 // looks something like
-//  email=foo@bar.co m&role=user&uid=1 0
+//
+//	email=foo@bar.co m&role=user&uid=1 0
 //
 // We can isolate the role key and value to obtain the ability to effectively
 // the key to an arbitrary value; it will look like the below.
+//
 //	email=AAAA&role= user&uid=10
 //
 // Afterwards, we can just make a large email that will take up the whole block
 // and then some; we can combine these two blocks together to yield
-// 	email=AAAA&role= admin&role=user& uid=10
+//
+//	email=AAAA&role= admin&role=user& uid=10
 func GenerateAdmin(oracle func(email string) []byte, size int) []byte {
 	const e = len("email=")
 	const r = len("&role=")
@@ -281,7 +286,7 @@ func DecryptPrependOracle(oracle func([]byte) []byte) []byte {
 
 	c := oracle(bytes.Repeat([]byte{'A'}, bs*3)) // create two identical blocks; we're using ECB
 
-	m := map[string]int{}
+	m := make(map[string]int, len(c))
 	for i := 0; i < len(c); i += bs {
 		b := string(c[i : i+bs]) // a block
 		if p, ok := m[b]; ok {   // if we've seen this block before jump out and assign the index of the first controlled block
@@ -336,18 +341,19 @@ func NewCBCBitflipOracle() (oracle func([]byte) []byte, checkAdmin func([]byte) 
 	return
 }
 
-// SolveCBCBitflipOracle solves challenge 14 by flipping two bits to get
-// `;admin=true;` in the plaintext. This works by taking advantage of how CBC
-// decryption works: a plaintext block is the result of decrypting the
-// ciphertext and xoring it with the previous block.
+// SolveCBCBitflipOracle solves challenge 14 by flipping two bits to get ;admin=true; in the
+// plaintext. This works by taking advantage of how CBC decryption works: a plaintext block is the
+// result of decrypting the ciphertext and xoring it with the previous block.
 //
-// If we can control the plaintext, we know that the raw result of the AES
-// decryption pass is
+// If we can control the plaintext, we know that the raw result of the AES decryption pass is
+//
 //	D[i] ^ C[i-1]
+//
 // By editing the same byte in the previous block we can craft a byte that is
+//
 //	C[i] ^= NEXT_BYTE_SAME_POSITION ^ TARGET_BYTE
-// I've elected to choose the 'X' byte to make this obvious, but it could
-// feasibly be any byte.
+//
+// I've elected to choose the 'X' byte to make this obvious, but it could feasibly be any byte.
 func SolveCBCBitflipOracle(oracle func([]byte) []byte) []byte {
 	o := oracle([]byte("XadminXtrue"))
 	o[16] ^= 'X' ^ ';'

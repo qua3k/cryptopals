@@ -11,7 +11,7 @@ import (
 )
 
 func TestChallenge1(t *testing.T) {
-	bs, _ := HexToBase64("49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d")
+	bs := HexToBase64("49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d")
 
 	// expected value
 	assert(t, "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t", bs)
@@ -136,14 +136,7 @@ func TestChallenge7(t *testing.T) {
 }
 
 func TestChallenge8(t *testing.T) {
-	const filename = "testdata/8.txt"
-
-	f, err := os.Open(filename)
-	if err != nil {
-		t.Errorf("could not open %s, failed with error %v\n", filename, err)
-	}
-	defer f.Close()
-
+	f, _ := os.Open("testdata/8.txt")
 	scanner := bufio.NewScanner(f)
 
 	var i int
